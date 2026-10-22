@@ -13,8 +13,6 @@
         .logo-area p { color: #8892b0; font-size: 0.8rem; }
         .nav-btn { background: transparent; color: #a8b2d1; border: 1px solid transparent; padding: 12px; text-align: left; border-radius: 8px; cursor: pointer; transition: 0.3s; width: 100%; margin-bottom: 5px; }
         .nav-btn:hover, .nav-btn.active { background: #112240; color: #00f3ff; border: 1px solid #00f3ff; box-shadow: 0 0 15px rgba(0,243,255,0.2); }
-        .ad-section { margin-top: auto; }
-        .glow-btn { background: linear-gradient(90deg, #0052d4, #4364f7); color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; box-shadow: 0 0 20px rgba(67, 100, 247, 0.4); }
         .main-content { flex: 1; display: flex; flex-direction: column; padding: 20px; background: radial-gradient(circle at top left, #0a1930, #030b17); }
         .top-bar { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #1a365d; }
         .greeting { font-size: 1.5rem; font-weight: bold; }
@@ -26,37 +24,19 @@
         .input-area { display: flex; gap: 10px; background: #0b1e36; padding: 10px; border-radius: 15px; border: 1px solid #1a365d; margin-top: 10px; }
         .input-area input { flex: 1; background: transparent; border: none; color: white; padding: 10px; outline: none; font-size: 1rem; }
         .input-area button { background: #00f3ff; color: #030b17; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; font-weight: bold; transition: 0.3s; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
-        .input-area button:hover { box-shadow: 0 0 15px #00f3ff; transform: scale(1.05); }
-        @media (max-width: 768px) { .app-container { flex-direction: column; } .sidebar { width: 100%; height: auto; padding: 15px; } .ad-section { display: none; } }
+        @media (max-width: 768px) { .app-container { flex-direction: column; } .sidebar { display: none; } }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <div class="logo-area">
-                <h2>🚀 Zora AI Studio</h2>
-                <p>Your Free AI Workspace</p>
-            </div>
-            <nav>
-                <button class="nav-btn active">💬 AI Chat</button>
-                <button class="nav-btn" onclick="alert('Coming soon!')">🖼️ Image Studio</button>
-                <button class="nav-btn" onclick="alert('Coming soon!')">🎥 Video Studio</button>
-                <button class="nav-btn" onclick="alert('Coming soon!')">🛡️ Cybersecurity</button>
-            </nav>
-        </aside>
-
-        <!-- Main Content -->
         <main class="main-content">
             <header class="top-bar">
                 <div class="greeting">Hello, Creator! 👋</div>
-                <div class="token-display">💎 <span id="creditCount">5</span> Credits</div>
+                <div class="token-display">💎 5 Credits</div>
             </header>
-
             <div class="chat-container" id="chatBox">
                 <div class="message ai">Welcome to Zora AI! Ask me anything.</div>
             </div>
-
             <div class="input-area">
                 <input type="text" id="userInput" placeholder="Ask anything..." autocomplete="off">
                 <button id="sendBtn">➤</button>
@@ -64,10 +44,9 @@
         </main>
     </div>
 
-    <!-- AI Logic -->
     <script>
-        // यहाँ "YOUR_API_KEY_HERE" को हटाकर अपनी असली API Key डालें
-        const API_KEY = "AQ.Ab8RN6I2w8DepEmzjs3XB_Xc5gVuMLqVfRSEb-K2sVmg6JfW7A"; 
+        // ध्यान दें: अपनी API Key यहाँ बिल्कुल ऐसे ही डालें (डबल कोट्स "" के अंदर)
+        const API_KEY = "AQ.Ab8RN6I2Gj-xMsOCBD6bpwMzeuEB4CnsWDXt5ivRwr3VPq6vRg"; 
 
         function appendMessage(sender, text) {
             const chatBox = document.getElementById('chatBox');
@@ -101,10 +80,13 @@
                 const data = await response.json();
                 typingMsg.remove();
 
-                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                // नया एरर चेकिंग सिस्टम (यह हमें असली एरर बताएगा)
+                if (data.error) {
+                    appendMessage('ai', "❌ Google Error: " + data.error.message);
+                } else if (data.candidates && data.candidates[0].content.parts[0].text) {
                     appendMessage('ai', data.candidates[0].content.parts[0].text);
                 } else {
-                    appendMessage('ai', "❌ API Key check karein.");
+                    appendMessage('ai', "❌ No response from API.");
                 }
             } catch (error) {
                 typingMsg.remove();
