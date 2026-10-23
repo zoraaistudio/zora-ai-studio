@@ -188,8 +188,8 @@
 
 <body>
   <header>
-    <h1>Zora AI Studio</h1>
-    <p>Your AI assistant</p>
+    <h1>Zora AI Studio ✨</h1>
+    <p>Your Direct AI Assistant</p>
   </header>
 
   <main>
@@ -229,22 +229,14 @@
   </main>
 
   <footer>
-    Zora AI Studio · AI responses may occasionally be inaccurate.
+    Zora AI Studio · Powered directly by Google Gemini
   </footer>
 
   <script>
     "use strict";
 
-    /*
-      LIVE BACKEND CONFIGURATION
-
-      Replace this URL with your deployed backend URL.
-      Example format:
-      https://your-worker.your-account.workers.dev
-
-      Do not put your Gemini API key in this file.
-    */
-    const BACKEND_URL = "https://quiet-cake-3740.anantmi444shra.workers.dev";
+    // 🔴 यहाँ अपनी Google Gemini API Key पेस्ट करें (डबल कोट्स "" के अंदर)
+    const API_KEY = "YAHAN_APNI_KEY_PASTE_KAREIN".trim();
 
     const form = document.getElementById("chatForm");
     const promptInput = document.getElementById("prompt");
@@ -279,15 +271,9 @@
 
     function resetChat() {
       if (busy) return;
-
       history = [];
       messagesElement.replaceChildren();
-
-      addMessage(
-        "New chat started! How can I help you?",
-        "assistant"
-      );
-
+      addMessage("New chat started! How can I help you?", "assistant");
       setStatus("Ready to chat");
       promptInput.focus();
     }
@@ -295,33 +281,21 @@
     clearButton.addEventListener("click", resetChat);
 
     promptInput.addEventListener("keydown", event => {
-      if (
-        event.key === "Enter" &&
-        !event.shiftKey &&
-        !event.isComposing
-      ) {
+      if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
         event.preventDefault();
-
-        if (form.requestSubmit) {
-          form.requestSubmit();
-        }
+        if (form.requestSubmit) form.requestSubmit();
       }
     });
 
     form.addEventListener("submit", async event => {
       event.preventDefault();
-
       if (busy) return;
 
       const message = promptInput.value.trim();
       if (!message) return;
 
-      if (
-        !BACKEND_URL ||
-        BACKEND_URL === "PASTE_YOUR_BACKEND_URL_HERE" ||
-        !/^https:\/\/[^/]+/i.test(BACKEND_URL)
-      ) {
-        setStatus("Backend URL set up nahi hai. BACKEND_URL configure karo.");
+      if (!API_KEY || API_KEY === "YAHAN_APNI_KEY_PASTE_KAREIN") {
+        setStatus("API Key missing! Pehle script me apni key dalein.");
         return;
       }
 
@@ -333,58 +307,56 @@
 
       const replyElement = addMessage("Thinking...", "assistant");
 
-      const nextHistory = [
-        ...history,
-        { role: "user", content: message }
-      ];
+      // Chat history तैयार करना
+      const contents = history.map(item => ({
+        role: item.role === "assistant" ? "model" : "user",
+        parts: [{ text: item.content }]
+      }));
+      contents.push({
+        role: "user",
+        parts: [{ text: message }]
+      });
 
       try {
+        // Direct call to Gemini 2.0 Flash
         const response = await fetch(
-          BACKEND_URL.replace(/\/+$/, "") + "/chat",
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`,
           {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
             },
             body: JSON.stringify({
-              message: message,
-              history: history
+              contents: contents,
+              generationConfig: {
+                maxOutputTokens: 2048,
+                temperature: 0.7
+              }
             })
           }
         );
 
-        const data = await response.json().catch(() => ({}));
+        const data = await response.json();
 
-        if (!response.ok) {
-          throw new Error(
-            data.error || `Server error (${response.status})`
-          );
+        if (data.error) {
+          throw new Error(data.error.message);
         }
 
-        if (
-          typeof data.reply !== "string" ||
-          !data.reply.trim()
-        ) {
-          throw new Error(
-            "Backend response mein reply nahi mila."
-          );
+        const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+
+        if (!reply) {
+          throw new Error("No response generated.");
         }
 
-        replyElement.textContent = data.reply;
+        replyElement.textContent = reply;
 
-        history = [
-          ...nextHistory,
-          { role: "assistant", content: data.reply }
-        ];
+        history.push({ role: "user", content: message });
+        history.push({ role: "assistant", content: reply });
 
         setStatus("Reply received");
       } catch (error) {
-        replyElement.textContent =
-          "Sorry, reply nahi mil saka. " + error.message;
-
-        setStatus(
-          "Connection error. Backend URL, deployment aur server logs check karo."
-        );
+        replyElement.textContent = "Error: " + error.message;
+        setStatus("Request failed. Please check key or internet.");
       } finally {
         setBusy(false);
         promptInput.focus();
