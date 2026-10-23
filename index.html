@@ -45,69 +45,150 @@
         </main>
     </div>
 
-    <script>
-        // यहाँ अपनी वही काम करने वाली नई Key डालें
-        const API_KEY = "AQ.Ab8RN6LPidPeUrU4C_3GCiDFryWCFb5h6om8LEr6MJvsQ7fVIg".trim(); 
+</script>
+         
+const API_KEY = "APNI_GEMINI_API_KEY_YAHAN";
 
-        function appendMessage(sender, text) {
-            const chatBox = document.getElementById('chatBox');
-            const div = document.createElement('div');
-            div.className = `message ${sender}`;
-            div.innerText = text;
-            chatBox.appendChild(div);
-            chatBox.scrollTop = chatBox.scrollHeight;
+const API_BASE =
+  "https://generativelanguage.googleapis.com/v1beta";
+
+async function handleSendMessage() {
+  const input = document.getElementById("userInput");
+  const chatBox = document.getElementById("chatBox");
+  const sendBtn = document.getElementById("sendBtn");
+  const message = input.value.trim();
+
+  if (!message) return;
+
+  if (
+    !API_KEY ||
+    API_KEY === "APNI_GEMINI_API_KEY_YAHAN"
+  ) {
+    appendMessage("ai", "API key configure nahi hai.");
+    return;
+  }
+
+  appendMessage("user", message);
+  input.value = "";
+  sendBtn.disabled = true;
+
+  const typing = document.createElement("div");
+  typing.className = "message ai";
+  typing.innerText = "Zora is checking available models...";
+  chatBox.appendChild(typing);
+
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      "x-goog-api-key": API_KEY
+    };
+
+    // 1. Get models available to this API key.
+    const listResponse = await fetch(
+      `${API_BASE}/models?pageSize=1000`,
+      {
+        method: "GET",
+        headers: {
+          "x-goog-api-key": API_KEY
         }
+      }
+    );
 
-        async function handleSendMessage() {
-            const input = document.getElementById('userInput');
-            const message = input.value.trim();
-            if (!message) return;
+    const listData = await listResponse.json();
 
-            appendMessage('user', message);
-            input.value = '';
+    if (!listResponse.ok) {
+      throw new Error(
+        listData.error?.message ||
+        `Model list failed: HTTP ${listResponse.status}`
+      );
+    }
 
-            const typingMsg = document.createElement('div');
-            typingMsg.className = 'message ai';
-            typingMsg.innerText = "Zora is typing...";
-            document.getElementById('chatBox').appendChild(typingMsg);
+    const models = (listData.models || []).filter(model =>
+      model.name &&
+      model.supportedGenerationMethods?.includes(
+        "generateContent"
+      )
+    );
 
-            try {
-                // मैंने मॉडल का नाम बदलकर सबसे स्टेबल 'gemini-pro' कर दिया है
-                let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent`;
-                let reqHeaders = { 'Content-Type': 'application/json' };
+    // 2. Prefer Flash models; use exact names returned by Google.
+    const preferred = [
+      "models/gemini-3.8-flash",
+      "models/gemini-2.5-flash",
+      "models/gemini-2.5-flash-lite"
+    ];
 
-                if (API_KEY.startsWith("AIza")) {
-                    apiUrl += `?key=${API_KEY}`;
-                } else {
-                    reqHeaders['x-goog-api-key'] = API_KEY;
-                }
+    let selected = preferred
+      .map(name => models.find(m => m.name === name))
+      .find(Boolean);
 
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: reqHeaders,
-                    body: JSON.stringify({ contents: [{ parts: [{ text: message }] }] })
-                });
-                
-                const data = await response.json();
-                typingMsg.remove();
+    if (!selected) {
+      selected = models.find(m =>
+        /flash/i.test(m.name) &&
+        /gemini/i.test(m.name)
+      );
+    }
 
-                if (data.error) {
-                    appendMessage('ai', "❌ Google Error: " + data.error.message);
-                } else if (data.candidates && data.candidates[0].content.parts[0].text) {
-                    appendMessage('ai', data.candidates[0].content.parts[0].text);
-                } else {
-                    appendMessage('ai', "❌ No response from API.");
-                }
-            } catch (error) {
-                typingMsg.remove();
-                appendMessage('ai', "❌ Network error.");
-            }
-        }
+    if (!selected) {
+      throw new Error(
+        "Koi supported Gemini Flash model nahi mila. " +
+        "Google AI Studio mein API access check karo."
+      );
+    }
 
-        document.getElementById('sendBtn').addEventListener('click', handleSendMessage);
-        document.getElementById('userInput').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') handleSendMessage();
-        });
-    </script>
+    // 3. Call the selected model.
+    const response = await fetch(
+      `${API_BASE}/${selected.name}:generateContent`,
+      {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          contents: [{
+            role: "user",
+            parts: [{ text: message }]
+          }]
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        `${selected.name}: ` +
+        (data.error?.message || `HTTP ${response.status}`)
+      );
+    }
+
+    const answer = data.candidates?.[0]?.content?.parts
+      ?.map(part => part.text || "")
+      .join("")
+      .trim();
+
+    if (!answer) {
+      throw new Error(
+        "Model ne text response nahi diya. Dobara try karo."
+      );
+    }
+
+    typing.remove();
+    appendMessage("ai", answer);
+
+  } catch (error) {
+    typing.remove();
+    appendMessage("ai", "❌ " + error.message);
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+document.getElementById("sendBtn")
+  .addEventListener("click", handleSendMessage);
+
+document.getElementById("userInput")
+  .addEventListener("keydown", event => {
+    if (event.key === "Enter") handleSendMessage();
+  });
+
+ </script> 
 </body>
 </html>
