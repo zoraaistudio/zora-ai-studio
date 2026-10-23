@@ -31,8 +31,8 @@
     <div class="app-container">
         <main class="main-content">
             <header class="top-bar">
-                <!-- रॉकेट आइकॉन यह बताएगा कि नया कोड लोड हो चुका है -->
-                <div class="greeting">Hello, Creator! 🚀</div>
+                <!-- इस बार स्टार ⭐ आइकॉन बताएगा कि नया कोड आ गया है -->
+                <div class="greeting">Hello, Creator! ⭐</div>
                 <div class="token-display">💎 5 Credits</div>
             </header>
             <div class="chat-container" id="chatBox">
@@ -47,7 +47,7 @@
 
     <script>
         // यहाँ अपनी वही काम करने वाली नई Key डालें
-        const API_KEY = "AQ.Ab8RN6Iz1Wa4azsE79OMdPe2sDRvb_y0gyXa2w20QEeGBRdWug".trim(); 
+        const API_KEY = "YAHAN_KEY_DAALEIN".trim(); 
 
         function appendMessage(sender, text) {
             const chatBox = document.getElementById('chatBox');
@@ -72,8 +72,8 @@
             document.getElementById('chatBox').appendChild(typingMsg);
 
             try {
-                // मैंने मॉडल का नाम यहाँ 'gemini-1.5-flash-latest' कर दिया है, जो 100% सपोर्टेड है
-                let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent`;
+                // मैंने मॉडल का नाम बदलकर सबसे स्टेबल 'gemini-pro' कर दिया है
+                let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent`;
                 let reqHeaders = { 'Content-Type': 'application/json' };
 
                 if (API_KEY.startsWith("AIza")) {
